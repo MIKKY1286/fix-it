@@ -15,34 +15,50 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+const isFirebaseConfigured = !!(
+  firebaseConfig.apiKey &&
+  firebaseConfig.apiKey !== '' &&
+  firebaseConfig.apiKey !== 'YOUR_FIREBASE_API_KEY' &&
+  !firebaseConfig.apiKey.startsWith('mock-')
+);
 
-// Initialize Firebase Services
-const auth = getAuth(app);
-
-// Initialize Firestore with modern persistent local cache (enables offline capability automatically)
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-});
-const storage = getStorage(app);
-const functions = getFunctions(app);
-
-// Providers
-const googleProvider = new GoogleAuthProvider();
-googleProvider.setCustomParameters({ prompt: 'select_account' });
-
-// Initialize messaging with isSupported checks (non-blocking for SSR / unsupported browsers)
+// Initialize Firebase Services placeholder
+let app = null;
+let auth = null;
+let db = null;
+let storage = null;
 let messaging = null;
-isSupported().then((supported) => {
-  if (supported) {
-    messaging = getMessaging(app);
+let functions = null;
+let googleProvider = null;
+
+if (isFirebaseConfigured) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager()
+      })
+    });
+    storage = getStorage(app);
+    functions = getFunctions(app);
+    
+    // Providers
+    googleProvider = new GoogleAuthProvider();
+    googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+    // Initialize messaging with isSupported checks (non-blocking for SSR / unsupported browsers)
+    isSupported().then((supported) => {
+      if (supported) {
+        messaging = getMessaging(app);
+      }
+    }).catch((err) => {
+      console.warn('Firebase Messaging is not supported in this environment.', err);
+    });
+  } catch (err) {
+    console.error('Error initializing Firebase services:', err);
   }
-}).catch((err) => {
-  console.warn('Firebase Messaging is not supported in this environment.', err);
-});
+}
 
 export {
   app,
@@ -52,4 +68,5 @@ export {
   messaging,
   functions,
   googleProvider,
+  isFirebaseConfigured,
 };

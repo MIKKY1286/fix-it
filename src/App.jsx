@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Lenis from 'lenis';
 import { router } from './routes';
 import { AuthProvider } from './context/AuthContext';
+import { isFirebaseConfigured } from './firebase/config';
+import SetupGuide from './components/common/SetupGuide';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -38,6 +40,10 @@ function App() {
       lenis.destroy();
     };
   }, []);
+
+  if (!isFirebaseConfigured) {
+    return <SetupGuide />;
+  }
 
   return (
     <HelmetProvider>
